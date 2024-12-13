@@ -6,10 +6,22 @@ internal class Program
 {
     static void Main(string[] args)
     {
+        string username = "", password = "";
+
         // replace this with your credentials!
         // please remind not pushing code changes with your credentials!
-        var username = System.IO.File.ReadAllText(@"C:\Credentials\ToyotaClientUsername.txt");
-        var password = System.IO.File.ReadAllText(@"C:\Credentials\ToyotaClientPassword.txt");
+        if (File.Exists(@"C:\Credentials\ToyotaClientUsername.txt") && 
+            File.Exists(@"C:\Credentials\ToyotaClientPassword.txt"))
+        {
+            username = File.ReadAllText(@"C:\Credentials\ToyotaClientUsername.txt");
+            password = File.ReadAllText(@"C:\Credentials\ToyotaClientPassword.txt");
+        }
+        if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
+        {
+            Console.Write("Enter your Toyota username: "); username = Console.ReadLine(); Console.WriteLine();
+            Console.Write("Enter your Toyota password: "); password = Console.ReadLine(); Console.WriteLine();
+        }
+
 
         var client = new MyToyota()
             .UseCredentials(username, password)
