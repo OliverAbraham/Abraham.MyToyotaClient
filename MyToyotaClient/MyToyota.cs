@@ -3,7 +3,6 @@ using Newtonsoft.Json;
 using MyToyotaClient.Models;
 using System.Web;
 using System.IdentityModel.Tokens.Jwt;
-using static System.Net.WebRequestMethods;
 
 namespace MyToyotaClient;
 
@@ -55,12 +54,6 @@ public class MyToyota
 
 
 
-    #region ------------- Properties ----------------------------------------------------------
-    public string TokenCacheFilename { get; set; } = "toyota_credentials_cache_contains_secrets.json";
-    #endregion
-
-
-
     #region ------------- Fields --------------------------------------------------------------
     private Action<string> _logger;
     private string         _username;
@@ -72,6 +65,7 @@ public class MyToyota
     private RestClient     _client;
     private TokenCacheItem _tokenCache;
     private bool           _useTokenCaching = true;
+    private string         _tokenCacheFilename = "toyota_credentials_cache_contains_secrets.json";
     #endregion
 
 
@@ -106,7 +100,7 @@ public class MyToyota
 
     public MyToyota UseTokenCacheFilename(string tokenCacheFilename)
     {
-        TokenCacheFilename = tokenCacheFilename;
+        _tokenCacheFilename = tokenCacheFilename;
         return this;
     }
 
@@ -118,9 +112,9 @@ public class MyToyota
 
     public void Login()
     {
-        if (System.IO.File.Exists(TokenCacheFilename))
+        if (System.IO.File.Exists(_tokenCacheFilename))
         {
-            var content = System.IO.File.ReadAllText(TokenCacheFilename);
+            var content = System.IO.File.ReadAllText(_tokenCacheFilename);
             _tokenCache = JsonConvert.DeserializeObject<TokenCacheItem>(content);
         }
 
@@ -132,122 +126,42 @@ public class MyToyota
 
     public VehiclesModel GetVehicles()
     {
-        var request = CreateGetRequest(VEHICLE_GUID_ENDPOINT);
-        var response = Execute(request);
-
-        try
-        {
-            return JsonConvert.DeserializeObject<VehiclesModel>(response.Content);
-        }
-        catch (Exception ex)
-        {
-            throw new Exception($"could not deserialize {nameof(VehiclesModel)} from Toyota API", ex);
-        }
+        return Get<VehiclesModel>(VEHICLE_GUID_ENDPOINT);
     }
 
     public ElectricResponseModel GetElectric(string vin)
     {
-        var request = CreateGetRequest(VEHICLE_GLOBAL_REMOTE_ELECTRIC_STATUS_ENDPOINT, vin);
-        var response = Execute(request);
-
-        try
-        {
-            return JsonConvert.DeserializeObject<ElectricResponseModel>(response.Content);
-        }
-        catch (Exception ex)
-        {
-            throw new Exception($"could not deserialize {nameof(ElectricResponseModel)} from Toyota API", ex);
-        }
+        return Get<ElectricResponseModel>(VEHICLE_GLOBAL_REMOTE_ELECTRIC_STATUS_ENDPOINT, vin);
     }
 
     public LocationResponseModel GetLocation(string vin)
     {
-        var request = CreateGetRequest(VEHICLE_LOCATION_ENDPOINT, vin);
-        var response = Execute(request);
-
-        try
-        {
-            return JsonConvert.DeserializeObject<LocationResponseModel>(response.Content);
-        }
-        catch (Exception ex)
-        {
-            throw new Exception($"could not deserialize {nameof(LocationResponseModel)} from Toyota API", ex);
-        }
+        return Get<LocationResponseModel>(VEHICLE_LOCATION_ENDPOINT, vin);
     }
 
     public HealthStatusResponseModel GetHealthStatus(string vin)
     {
-        var request = CreateGetRequest(VEHICLE_HEALTH_STATUS_ENDPOINT, vin);
-        var response = Execute(request);
-
-        try
-        {
-            return JsonConvert.DeserializeObject<HealthStatusResponseModel>(response.Content);
-        }
-        catch (Exception ex)
-        {
-            throw new Exception($"could not deserialize {nameof(HealthStatusResponseModel)} from Toyota API", ex);
-        }
+        return Get<HealthStatusResponseModel>(VEHICLE_HEALTH_STATUS_ENDPOINT, vin);
     }
 
     public TelemetryStatusResponseModel GetTelemetryStatus(string vin)
     {
-        var request = CreateGetRequest(VEHICLE_TELEMETRY_ENDPOINT, vin);
-        var response = Execute(request);
-
-        try
-        {
-            return JsonConvert.DeserializeObject<TelemetryStatusResponseModel>(response.Content);
-        }
-        catch (Exception ex)
-        {
-            throw new Exception($"could not deserialize {nameof(TelemetryStatusResponseModel)} from Toyota API", ex);
-        }
+        return Get<TelemetryStatusResponseModel>(VEHICLE_TELEMETRY_ENDPOINT, vin);
     }
 
     public NotificationsResponseModel GetNotifications(string vin)
     {
-        var request = CreateGetRequest(VEHICLE_NOTIFICATION_HISTORY_ENDPOINT, vin);
-        var response = Execute(request);
-
-        try
-        {
-            return JsonConvert.DeserializeObject<NotificationsResponseModel>(response.Content);
-        }
-        catch (Exception ex)
-        {
-            throw new Exception($"could not deserialize {nameof(NotificationsResponseModel)} from Toyota API", ex);
-        }
+        return Get<NotificationsResponseModel>(VEHICLE_NOTIFICATION_HISTORY_ENDPOINT, vin);
     }
 
     public RemoteStatusResponseModel GetRemoteStatus(string vin)
     {
-        var request = CreateGetRequest(VEHICLE_GLOBAL_REMOTE_STATUS_ENDPOINT, vin);
-        var response = Execute(request);
-
-        try
-        {
-            return JsonConvert.DeserializeObject<RemoteStatusResponseModel>(response.Content);
-        }
-        catch (Exception ex)
-        {
-            throw new Exception($"could not deserialize {nameof(RemoteStatusResponseModel)} from Toyota API", ex);
-        }
+        return Get<RemoteStatusResponseModel>(VEHICLE_GLOBAL_REMOTE_STATUS_ENDPOINT, vin);
     }
 
     public ServiceHistoryResponseModel GetServiceHistory(string vin)
     {
-        var request = CreateGetRequest(VEHICLE_SERVICE_HISTORY_ENDPONT, vin);
-        var response = Execute(request);
-
-        try
-        {
-            return JsonConvert.DeserializeObject<ServiceHistoryResponseModel>(response.Content);
-        }
-        catch (Exception ex)
-        {
-            throw new Exception($"could not deserialize {nameof(ServiceHistoryResponseModel)} from Toyota API", ex);
-        }
+        return Get<ServiceHistoryResponseModel>(VEHICLE_SERVICE_HISTORY_ENDPONT, vin);
     }
     #endregion
 
@@ -277,12 +191,8 @@ public class MyToyota
 
     private void Authenticate()
     {
-        _logger("Authenticating");
-
-        var authenticationInfo = new AuthenticationInfo() { username = _username };
-
-
         #region --------------- retrieve access token ---------------------------------------------
+        _logger("Authenticating");
         AuthenticationModel data = null;
         AuthenticationModel2? tokenInfo = null;
 
@@ -328,14 +238,12 @@ public class MyToyota
 
         if (tokenInfo is null)
             throw new Exception("could not authenticate with Toyota");
-
-        authenticationInfo.access_token = tokenInfo.tokenId;
         #endregion        
 
         #region --------------- authorize ----------------------------------------------------------
         var request2 = new RestRequest(AUTHORIZE_URL, Method.Get);
         request2.Timeout = TimeSpan.FromSeconds(_timeoutInSeconds);
-        request2.AddHeader("cookie", $"iPlanetDirectoryPro={authenticationInfo.access_token}");
+        request2.AddHeader("cookie", $"iPlanetDirectoryPro={tokenInfo.tokenId}");
 
         var response2 = _client.ExecuteGet(request2);
         if (response2.StatusCode != System.Net.HttpStatusCode.OK && 
@@ -367,7 +275,6 @@ public class MyToyota
             var request3 = new RestRequest(ACCESS_TOKEN_URL, Method.Post);
             request3.Timeout = TimeSpan.FromSeconds(_timeoutInSeconds);
             request3.AddHeader("authorization", "basic b25lYXBwOm9uZWFwcA==");
-            //request3.Authenticator = new HttpBasicAuthenticator("oneapp", "oneapp");
 
             var tokenRequestData = new Dictionary<string, string>
             {
@@ -379,8 +286,6 @@ public class MyToyota
             };
             var req = new FormUrlEncodedContent(tokenRequestData).ReadAsStringAsync().GetAwaiter().GetResult();
             request3.AddBody(req, ContentType.FormUrlEncoded);
-
-            //request3.AddJsonBody(requestBodyJson, forceSerialize:false, ContentType.JsonAccept[3]);
         
             var response3 = _client.ExecutePost(request3);
             if (response3.StatusCode != System.Net.HttpStatusCode.OK)
@@ -426,7 +331,7 @@ public class MyToyota
             username      = _username
         };
         
-        System.IO.File.WriteAllText(TokenCacheFilename, JsonConvert.SerializeObject(_tokenCache));
+        System.IO.File.WriteAllText(_tokenCacheFilename, JsonConvert.SerializeObject(_tokenCache));
     }
 
     private async Task RefreshTokens()
@@ -467,6 +372,21 @@ public class MyToyota
         return _tokenCache != null && 
             !string.IsNullOrEmpty(_tokenCache.access_token) &&
             _tokenCache.expiration > DateTime.Now;
+    }
+
+    private T Get<T>(string endpoint, string vin = null)
+    {
+        var request = CreateGetRequest(endpoint, vin);
+        var response = Execute(request);
+
+        try
+        {
+            return JsonConvert.DeserializeObject<T>(response.Content);
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"could not deserialize {nameof(T)} from Toyota API", ex);
+        }
     }
 
     private RestClient CreateRestClient()
