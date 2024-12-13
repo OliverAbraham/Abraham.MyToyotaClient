@@ -3,9 +3,22 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.9.34321.82
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyToyotaClient", "MyToyotaClient\MyToyotaClient.csproj", "{012D6CA6-B6F3-4CFC-A35F-368620E3C895}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MyToyotaClient", "MyToyotaClient\MyToyotaClient.csproj", "{012D6CA6-B6F3-4CFC-A35F-368620E3C895}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyToyotaClientDemo", "MyToyotaClientDemo\MyToyotaClientDemo.csproj", "{0A18AF6D-3A9A-4814-A058-1EC56DE09895}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MyToyotaClientDemo", "MyToyotaClientDemo\MyToyotaClientDemo.csproj", "{0A18AF6D-3A9A-4814-A058-1EC56DE09895}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "1 Nuget Package", "1 Nuget Package", "{9728B373-86A9-4522-89AD-5DCC700E62E6}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "2 Demo", "2 Demo", "{6AA92025-443E-4E34-89D4-826553856D12}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "3 Solution Items", "3 Solution Items", "{32D57EA0-355A-4045-AF19-01270145EB05}"
+	ProjectSection(SolutionItems) = preProject
+		Ciridata.ico = Ciridata.ico
+		Ciridata.png = Ciridata.png
+		LICENSE.txt = LICENSE.txt
+		README.md = README.md
+		screenshot1.jpg = screenshot1.jpg
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -24,6 +37,10 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{012D6CA6-B6F3-4CFC-A35F-368620E3C895} = {9728B373-86A9-4522-89AD-5DCC700E62E6}
+		{0A18AF6D-3A9A-4814-A058-1EC56DE09895} = {6AA92025-443E-4E34-89D4-826553856D12}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8A0E717C-B35E-4A06-82A1-800B3614F5D6}

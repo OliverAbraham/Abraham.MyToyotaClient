@@ -4,7 +4,33 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <Description>Connects to Toyota Connected Services Europe API and retrieves data about your Toyota cars.</Description>
+    <Copyright>Oliver Abraham, mail@oliver-abraham.de</Copyright>
+    <PackageProjectUrl>https://github.com/OliverAbraham/Abraham.MyToyotaClient</PackageProjectUrl>
+    <PackageIcon>Ciridata.png</PackageIcon>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/OliverAbraham/Abraham.MyToyotaClient</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
+    <IncludeSymbols>True</IncludeSymbols>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <Title>Client for Toyota Connected Services Europe API</Title>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\Ciridata.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Include="..\LICENSE.txt">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Include="..\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />

@@ -3,9 +3,33 @@ using Newtonsoft.Json;
 using MyToyotaClient.Models;
 using System.Web;
 using System.IdentityModel.Tokens.Jwt;
+using static System.Net.WebRequestMethods;
 
 namespace MyToyotaClient;
 
+/// <summary>
+/// Connects to Toyota Connected Services API and retrieves data about your Toyota cars.
+/// 
+/// You can use this Nuget package to read out the current battery level, range or geo position.
+/// Please take a look at my demo to find out the individual values.
+/// 
+/// 
+/// ## CREDITS
+/// Many thanks to the Toyota Connected Services Europe Python module by Simon Hansen!
+/// He has published his client at https://github.com/DurgNomis-drol/mytoyota.
+/// 
+/// ## LICENSE
+/// Licensed under Apache licence.
+/// https://www.apache.org/licenses/LICENSE-2.0
+/// 
+/// ## SOURCE CODE
+/// The source code is hosted at:
+/// https://github.com/OliverAbraham/Abraham.MyToyotaClient
+/// 
+/// The Nuget Package is hosted at: 
+/// https://www.nuget.org/packages/Abraham.MyToyotaClient
+/// 
+/// </summary>
 public class MyToyota
 {
     #region ------------- Toyota Connected Services API constants -----------------------------
@@ -16,8 +40,6 @@ public class MyToyota
     public const string AUTHORIZE_URL                                  = "https://b2c-login.toyota-europe.com/oauth2/realms/root/realms/tme/authorize?client_id=oneapp&scope=openid+profile+write&response_type=code&redirect_uri=com.toyota.oneapp:/oauth2Callback&code_challenge=plain&code_challenge_method=plain";
 
     // Endpoint URLs
-    //public const string CUSTOMER_ACCOUNT_ENDPOINT                      = "TBD";
-    //public const string VEHICLE_ASSOCIATION_ENDPOINT                   = "/v1/vehicle-association/vehicle";
     public const string VEHICLE_GUID_ENDPOINT                          = "/v2/vehicle/guid";
     public const string VEHICLE_LOCATION_ENDPOINT                      = "/v1/location";
     public const string VEHICLE_HEALTH_STATUS_ENDPOINT                 = "/v1/vehiclehealth/status";
@@ -25,14 +47,16 @@ public class MyToyota
     public const string VEHICLE_GLOBAL_REMOTE_ELECTRIC_STATUS_ENDPOINT = "/v1/global/remote/electric/status";
     public const string VEHICLE_TELEMETRY_ENDPOINT                     = "/v3/telemetry";
     public const string VEHICLE_NOTIFICATION_HISTORY_ENDPOINT          = "/v2/notification/history";
-    public const string VEHICLE_TRIPS_ENDPOINT                         = "/v1/trips?from={from_date}&to={to_date}&route={route}&summary={summary}&limit={limit}&offset={offset}";
     public const string VEHICLE_SERVICE_HISTORY_ENDPONT                = "/v1/servicehistory/vehicle/summary";
+    // t.b.d.   public const string CUSTOMER_ACCOUNT_ENDPOINT                      = "TBD";
+    // t.b.d.   public const string VEHICLE_ASSOCIATION_ENDPOINT                   = "/v1/vehicle-association/vehicle";
+    // t.b.d.   public const string VEHICLE_TRIPS_ENDPOINT                         = "/v1/trips?from={from_date}&to={to_date}&route={route}&summary={summary}&limit={limit}&offset={offset}";
     #endregion
 
 
 
     #region ------------- Properties ----------------------------------------------------------
-    string _tokenCacheFilename = "toyota_credentials_cache_contains_secrets.json";
+    public string TokenCacheFilename { get; set; } = "toyota_credentials_cache_contains_secrets.json";
     #endregion
 
 
@@ -41,20 +65,13 @@ public class MyToyota
     private Action<string> _logger;
     private string         _username;
     private string         _password;
-    private string         _token;
-    private DateTime?      _tokenExpiration;
     private string         _refreshToken;
-    private string         _uuid;
     private int            _timeoutInSeconds = 60;
-    private Uri            _apiBaseUrl;
-    private Uri            _accessTokenUrl;
-    private Uri            _authenticateUrl;
-    private Uri            _authorizeUrl;
     private bool           _bypassSslValidation = true;
     private string         _refresh_token;
-    private AuthenticationInfo _authenticationInfo;
-    private RestClient _client;
+    private RestClient     _client;
     private TokenCacheItem _tokenCache;
+    private bool           _useTokenCaching = true;
     #endregion
 
 
@@ -87,11 +104,23 @@ public class MyToyota
         return this;
     }
 
+    public MyToyota UseTokenCacheFilename(string tokenCacheFilename)
+    {
+        TokenCacheFilename = tokenCacheFilename;
+        return this;
+    }
+
+    public MyToyota UseTokenCaching(bool useTokenCaching)
+    {
+        _useTokenCaching = useTokenCaching;
+        return this;
+    }
+
     public void Login()
     {
-        if (File.Exists(_tokenCacheFilename))
+        if (System.IO.File.Exists(TokenCacheFilename))
         {
-            var content = File.ReadAllText(_tokenCacheFilename);
+            var content = System.IO.File.ReadAllText(TokenCacheFilename);
             _tokenCache = JsonConvert.DeserializeObject<TokenCacheItem>(content);
         }
 
@@ -250,7 +279,7 @@ public class MyToyota
     {
         _logger("Authenticating");
 
-        _authenticationInfo = new AuthenticationInfo() { username = _username };
+        var authenticationInfo = new AuthenticationInfo() { username = _username };
 
 
         #region --------------- retrieve access token ---------------------------------------------
@@ -300,16 +329,13 @@ public class MyToyota
         if (tokenInfo is null)
             throw new Exception("could not authenticate with Toyota");
 
-        _authenticationInfo.access_token = tokenInfo.tokenId;
-	    _authenticationInfo.refresh_token = "";
-	    _authenticationInfo.uuid = "";
-	    _authenticationInfo.expiration = "";
+        authenticationInfo.access_token = tokenInfo.tokenId;
         #endregion        
 
         #region --------------- authorize ----------------------------------------------------------
         var request2 = new RestRequest(AUTHORIZE_URL, Method.Get);
         request2.Timeout = TimeSpan.FromSeconds(_timeoutInSeconds);
-        request2.AddHeader("cookie", $"iPlanetDirectoryPro={_authenticationInfo.access_token}");
+        request2.AddHeader("cookie", $"iPlanetDirectoryPro={authenticationInfo.access_token}");
 
         var response2 = _client.ExecuteGet(request2);
         if (response2.StatusCode != System.Net.HttpStatusCode.OK && 
@@ -387,7 +413,7 @@ public class MyToyota
     {
         var handler = new JwtSecurityTokenHandler();
         var jwtToken = handler.ReadJwtToken(data.id_token);
-        _uuid = jwtToken.Claims.First(claim => claim.Type == "uuid").Value;
+        var uuid = jwtToken.Claims.First(claim => claim.Type == "uuid").Value;
 
         var tokenExpirationTime = DateTime.Now.AddSeconds(Convert.ToDouble(data.expires_in));
 
@@ -395,12 +421,12 @@ public class MyToyota
         {
             access_token  = data.access_token,
             refresh_token = data.refresh_token,
-            uuid          = _uuid,
+            uuid          = uuid,
             expiration    = tokenExpirationTime,
             username      = _username
         };
         
-        File.WriteAllText(_tokenCacheFilename, JsonConvert.SerializeObject(_tokenCache));
+        System.IO.File.WriteAllText(TokenCacheFilename, JsonConvert.SerializeObject(_tokenCache));
     }
 
     private async Task RefreshTokens()
