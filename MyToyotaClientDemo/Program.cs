@@ -16,7 +16,7 @@ internal class Program
             username = File.ReadAllText(@"C:\Credentials\ToyotaClientUsername.txt");
             password = File.ReadAllText(@"C:\Credentials\ToyotaClientPassword.txt");
         }
-        if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
+        else
         {
             Console.Write("Enter your Toyota username: "); username = Console.ReadLine(); Console.WriteLine();
             Console.Write("Enter your Toyota password: "); password = Console.ReadLine(); Console.WriteLine();
