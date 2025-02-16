@@ -52,6 +52,7 @@ internal class Program
             if (electric is not null && electric.payload is not null)
             {
                 Console.WriteLine($"Electric info:");
+                Console.WriteLine($"ChargingStatus   : {electric.payload.chargingStatus}");
                 Console.WriteLine($"Battery level    : {electric.payload.batteryLevel} %");
                 Console.WriteLine($"Range            : {electric.payload.evRange.value:N0} {electric.payload.evRange.unit}");
                 Console.WriteLine($"Range with AC    : {electric.payload.evRangeWithAc.value:N0} {electric.payload.evRangeWithAc.unit}");
