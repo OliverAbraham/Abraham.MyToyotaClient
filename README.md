@@ -96,8 +96,6 @@ https://www.nuget.org/packages/Abraham.MyToyotaClient
 
 ## SCREENSHOTS
 
-This shows the demo program displaying most of the data about my car:
-![](screenshot1.jpg)
 
 
 
