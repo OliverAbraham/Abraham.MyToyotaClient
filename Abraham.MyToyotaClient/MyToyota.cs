@@ -28,15 +28,22 @@ namespace MyToyotaClient;
 /// The Nuget Package is hosted at: 
 /// https://www.nuget.org/packages/Abraham.MyToyotaClient
 /// 
+/// -------------------------------------------------------------------------------------------
+/// 
+/// 04.05.2025: Took the latest changes "Adopting headers to latest client information" from Simon Hörrles commit:
+/// https://github.com/pytoyoda/pytoyoda/commit/ddaec52001a0917f6774b67c177f458a9fc6f535
 /// </summary>
 public class MyToyota
 {
     #region ------------- Toyota Connected Services API constants -----------------------------
+    public const string CLIENT_VERSION                                 = "2.14.0";
+    
     // API URLs
     public const string API_BASE_URL                                   = "https://ctpa-oneapi.tceu-ctp-prd.toyotaconnectedeurope.io";
     public const string ACCESS_TOKEN_URL                               = "https://b2c-login.toyota-europe.com/oauth2/realms/root/realms/tme/access_token";
     public const string AUTHENTICATE_URL                               = "https://b2c-login.toyota-europe.com/json/realms/root/realms/tme/authenticate?authIndexType=service&authIndexValue=oneapp";
     public const string AUTHORIZE_URL                                  = "https://b2c-login.toyota-europe.com/oauth2/realms/root/realms/tme/authorize?client_id=oneapp&scope=openid+profile+write&response_type=code&redirect_uri=com.toyota.oneapp:/oauth2Callback&code_challenge=plain&code_challenge_method=plain";
+    public const string API_KEY                                        = "tTZipv6liF74PwMfk9Ed68AQ0bISswwf3iHQdqcF";
 
     // Endpoint URLs
     public const string VEHICLE_GUID_ENDPOINT                          = "/v2/vehicle/guid";
@@ -402,15 +409,23 @@ public class MyToyota
 
     private RestRequest CreateGetRequest(string endpoint, string? vin = null)
     {
+        var uuid4 = Guid.NewGuid().ToString("D").ToUpperInvariant(); // "D" - xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (32 digits separated by hyphens)
+
         var request = new RestRequest(API_BASE_URL + endpoint, Method.Get);
         request.Timeout = TimeSpan.FromSeconds(_timeoutInSeconds);
-        request.AddHeader("x-api-key"    , "tTZipv6liF74PwMfk9Ed68AQ0bISswwf3iHQdqcF");
-        request.AddHeader("x-guid"       , _tokenCache.uuid);
-        request.AddHeader("guid"         , _tokenCache.uuid);
-        request.AddHeader("authorization", $"Bearer {_tokenCache.access_token}");
-        request.AddHeader("x-channel"    , "ONEAPP");
-        request.AddHeader("x-brand"      , "T");
-        request.AddHeader("user-agent"   , "okhttp/4.10.0");
+        request.AddHeader("x-api-key"      , API_KEY);
+        request.AddHeader("API_KEY"        , API_KEY);
+        request.AddHeader("x-guid"         , _tokenCache.uuid);
+        request.AddHeader("guid"           , _tokenCache.uuid);
+        request.AddHeader("x-client-ref"   , generate_hmac_sha256(CLIENT_VERSION, _tokenCache.uuid));
+        request.AddHeader("x-correlationid", uuid4);
+        request.AddHeader("x-appversion"   , CLIENT_VERSION);
+        request.AddHeader("x-region"       , "EU");
+        request.AddHeader("authorization"  , $"Bearer {_tokenCache.access_token}");
+        request.AddHeader("x-channel"      , "ONEAPP");
+        request.AddHeader("x-brand"        , "T");
+        request.AddHeader("user-agent"     , "okhttp/4.10.0");
+
 
         if (vin is not null)
             request.AddHeader("vin", vin);
@@ -425,6 +440,15 @@ public class MyToyota
             response.StatusCode != System.Net.HttpStatusCode.Found)
             throw new Exception($"Could not retrieve vehicles from Totoya API {response.StatusCode} {response.StatusDescription}");
         return response;
+    }
+
+    private string generate_hmac_sha256(string key, string message)
+    {
+        using (var hmac = new System.Security.Cryptography.HMACSHA256(System.Text.Encoding.UTF8.GetBytes(key)))
+        {
+            var hash = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(message));
+            return BitConverter.ToString(hash).Replace("-", "").ToLower();
+        }
     }
     #endregion
 }
