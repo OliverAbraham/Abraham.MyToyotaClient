@@ -54,8 +54,8 @@ internal class Program
                 Console.WriteLine($"Electric info:");
                 Console.WriteLine($"ChargingStatus   : {electric.payload.chargingStatus}");
                 Console.WriteLine($"Battery level    : {electric.payload.batteryLevel} %");
-                Console.WriteLine($"Range            : {electric.payload.evRange.value:N0} {electric.payload.evRange.unit}");
-                Console.WriteLine($"Range with AC    : {electric.payload.evRangeWithAc.value:N0} {electric.payload.evRangeWithAc.unit}");
+                Console.WriteLine($"Range            : {electric.payload?.evRange?.value:N0} {electric.payload?.evRange?.unit}");
+                Console.WriteLine($"Range with AC    : {electric.payload?.evRangeWithAc?.value:N0} {electric.payload?.evRangeWithAc?.unit}");
                 Console.WriteLine($"");
             }
 
@@ -88,8 +88,8 @@ internal class Program
             if (telemetry is not null && telemetry.payload is not null)
             {
                 Console.WriteLine($"Telemetry status:");
-                Console.WriteLine($"Distance to empty: {telemetry.payload.distanceToEmpty.value} {telemetry.payload.distanceToEmpty.unit}");
-                Console.WriteLine($"Odometer         : {telemetry.payload.odometer.value} {telemetry.payload.odometer.unit}");
+                Console.WriteLine($"Distance to empty: {telemetry.payload?.distanceToEmpty?.value} {telemetry.payload?.distanceToEmpty?.unit}");
+                Console.WriteLine($"Odometer         : {telemetry.payload?.odometer?.value} {telemetry.payload?.odometer?.unit}");
                 Console.WriteLine($"Timestamp        : {telemetry.payload.timestamp}");
                 Console.WriteLine($"");
             }
@@ -119,6 +119,21 @@ internal class Program
                 Console.WriteLine($"Service events:");
                 foreach(var ev in service.payload.serviceHistories.OrderBy(h => h.serviceDate))
                     Console.WriteLine($"    {ev.serviceDate}     : {ev.mileage,6} {ev.unit,-2}:   {ev.serviceCategory} - {ev.serviceProvider} (ID {ev.serviceHistoryId})");
+                Console.WriteLine($"");
+            }
+
+
+            var realtimeStatus = client.GetElectricRealtimeStatus(vehicle.vin);
+            if (realtimeStatus is not null)
+            {
+                Console.WriteLine($"Electric realtime status:");
+                foreach(var message in realtimeStatus.status.messages)
+                    Console.WriteLine(message.detailedDescription);
+                Console.WriteLine($"AppRequestNo: {realtimeStatus.payload.appRequestNo}");
+
+                //Console.WriteLine($"Battery level    : {realtimeStatus.payload.batteryLevel} %");
+                //Console.WriteLine($"Range            : {realtimeStatus.payload.evRange.value:N0} {electric.payload.evRange.unit}");
+                //Console.WriteLine($"Range with AC    : {realtimeStatus.payload.evRangeWithAc.value:N0} {electric.payload.evRangeWithAc.unit}");
                 Console.WriteLine($"");
             }
         }

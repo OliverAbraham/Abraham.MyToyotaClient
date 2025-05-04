@@ -1,8 +1,9 @@
-﻿using RestSharp;
-using Newtonsoft.Json;
+﻿using Abraham.MyToyotaClient.Models;
 using MyToyotaClient.Models;
-using System.Web;
+using Newtonsoft.Json;
+using RestSharp;
 using System.IdentityModel.Tokens.Jwt;
+using System.Web;
 
 namespace MyToyotaClient;
 
@@ -32,6 +33,9 @@ namespace MyToyotaClient;
 /// 
 /// 04.05.2025: Took the latest changes "Adopting headers to latest client information" from Simon Hörrles commit:
 /// https://github.com/pytoyoda/pytoyoda/commit/ddaec52001a0917f6774b67c177f458a9fc6f535
+/// 
+/// 04.05.2025: Took the latest changes "added api for electric_realtime_status. requests an update to electric chargin soc" from Fredrik Arnstadts commit:
+/// https://github.com/pytoyoda/pytoyoda/commit/3d073264a6891199e0f0862eee88d499efef653a
 /// </summary>
 public class MyToyota
 {
@@ -51,6 +55,7 @@ public class MyToyota
     public const string VEHICLE_HEALTH_STATUS_ENDPOINT                 = "/v1/vehiclehealth/status";
     public const string VEHICLE_GLOBAL_REMOTE_STATUS_ENDPOINT          = "/v1/global/remote/status";
     public const string VEHICLE_GLOBAL_REMOTE_ELECTRIC_STATUS_ENDPOINT = "/v1/global/remote/electric/status";
+    public const string VEHICLE_GLOBAL_REMOTE_ELECTRIC_REALTIME_STATUS_ENDPOINT = "/v1/global/remote/electric/realtime-status";
     public const string VEHICLE_TELEMETRY_ENDPOINT                     = "/v3/telemetry";
     public const string VEHICLE_NOTIFICATION_HISTORY_ENDPOINT          = "/v2/notification/history";
     public const string VEHICLE_SERVICE_HISTORY_ENDPONT                = "/v1/servicehistory/vehicle/summary";
@@ -139,6 +144,11 @@ public class MyToyota
     public ElectricResponseModel GetElectric(string vin)
     {
         return Get<ElectricResponseModel>(VEHICLE_GLOBAL_REMOTE_ELECTRIC_STATUS_ENDPOINT, vin);
+    }
+
+    public RealtimeStatus GetElectricRealtimeStatus(string vin)
+    {
+        return Post<RealtimeStatus>(VEHICLE_GLOBAL_REMOTE_ELECTRIC_REALTIME_STATUS_ENDPOINT, vin);
     }
 
     public LocationResponseModel GetLocation(string vin)
@@ -383,8 +393,24 @@ public class MyToyota
 
     private T Get<T>(string endpoint, string vin = null)
     {
-        var request = CreateGetRequest(endpoint, vin);
-        var response = Execute(request);
+        var request = CreateRequest(Method.Get, endpoint, vin);
+        var response = ExecuteGet(request);
+
+        try
+        {
+            return JsonConvert.DeserializeObject<T>(response.Content);
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"could not deserialize {nameof(T)} from Toyota API", ex);
+        }
+    }
+
+    private T Post<T>(string endpoint, string vin = null)
+    {
+        var request = CreateRequest(Method.Post, endpoint, vin);
+        request.AddBody("");
+        var response = ExecutePost(request);
 
         try
         {
@@ -407,11 +433,11 @@ public class MyToyota
         return client;
     }
 
-    private RestRequest CreateGetRequest(string endpoint, string? vin = null)
+    private RestRequest CreateRequest(Method method, string endpoint, string? vin = null)
     {
         var uuid4 = Guid.NewGuid().ToString("D").ToUpperInvariant(); // "D" - xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (32 digits separated by hyphens)
 
-        var request = new RestRequest(API_BASE_URL + endpoint, Method.Get);
+        var request = new RestRequest(API_BASE_URL + endpoint, method);
         request.Timeout = TimeSpan.FromSeconds(_timeoutInSeconds);
         request.AddHeader("x-api-key"      , API_KEY);
         request.AddHeader("API_KEY"        , API_KEY);
@@ -433,12 +459,21 @@ public class MyToyota
         return request;
     }
 
-    private RestResponse Execute(RestRequest request)
+    private RestResponse ExecuteGet(RestRequest request)
     {
         var response = _client.ExecuteGet(request);
         if (response.StatusCode != System.Net.HttpStatusCode.OK &&
             response.StatusCode != System.Net.HttpStatusCode.Found)
-            throw new Exception($"Could not retrieve vehicles from Totoya API {response.StatusCode} {response.StatusDescription}");
+            throw new Exception($"Could not retrieve information  from Totoya API {response.StatusCode} {response.StatusDescription}");
+        return response;
+    }
+
+    private RestResponse ExecutePost(RestRequest request)
+    {
+        var response = _client.ExecutePost(request);
+        if (response.StatusCode != System.Net.HttpStatusCode.OK &&
+            response.StatusCode != System.Net.HttpStatusCode.Found)
+            throw new Exception($"Could not retrieve information from Totoya API {response.StatusCode} {response.StatusDescription}");
         return response;
     }
 
