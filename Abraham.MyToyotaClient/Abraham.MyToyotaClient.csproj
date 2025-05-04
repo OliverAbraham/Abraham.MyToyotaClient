@@ -16,6 +16,8 @@
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Title>Client for Toyota Connected Services Europe API</Title>
     <Version>1.0.3</Version>
+    <PackageReleaseNotes>1. Adopted headers to latest client information
+2. Added new method "GetElectricRealtimeStatus" to get the realtime state of charge (SOC)</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
