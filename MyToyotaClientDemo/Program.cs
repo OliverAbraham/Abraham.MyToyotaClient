@@ -48,6 +48,24 @@ internal class Program
             Console.WriteLine($"");
 
 
+            Console.WriteLine($"Requesting realtime status.");
+            var realtimeStatus = client.GetElectricRealtimeStatus(vehicle.vin);
+            if (realtimeStatus is not null)
+            {
+                Console.WriteLine($"Electric realtime status:");
+                foreach(var message in realtimeStatus.status.messages)
+                    Console.WriteLine(message.detailedDescription);
+                Console.WriteLine($"AppRequestNo: {realtimeStatus.payload.appRequestNo}");
+
+                Console.WriteLine($"We need to wait now to give the Toyota server time to contact the car.");
+                for(int second = 2 * 60; second > 0; second--)
+                {
+                    Console.Write($"\rwaiting {second} seconds...");
+                    Thread.Sleep(1000);
+                }
+            }
+
+
             var electric = client.GetElectric(vehicle.vin);
             if (electric is not null && electric.payload is not null)
             {
@@ -119,21 +137,6 @@ internal class Program
                 Console.WriteLine($"Service events:");
                 foreach(var ev in service.payload.serviceHistories.OrderBy(h => h.serviceDate))
                     Console.WriteLine($"    {ev.serviceDate}     : {ev.mileage,6} {ev.unit,-2}:   {ev.serviceCategory} - {ev.serviceProvider} (ID {ev.serviceHistoryId})");
-                Console.WriteLine($"");
-            }
-
-
-            var realtimeStatus = client.GetElectricRealtimeStatus(vehicle.vin);
-            if (realtimeStatus is not null)
-            {
-                Console.WriteLine($"Electric realtime status:");
-                foreach(var message in realtimeStatus.status.messages)
-                    Console.WriteLine(message.detailedDescription);
-                Console.WriteLine($"AppRequestNo: {realtimeStatus.payload.appRequestNo}");
-
-                //Console.WriteLine($"Battery level    : {realtimeStatus.payload.batteryLevel} %");
-                //Console.WriteLine($"Range            : {realtimeStatus.payload.evRange.value:N0} {electric.payload.evRange.unit}");
-                //Console.WriteLine($"Range with AC    : {realtimeStatus.payload.evRangeWithAc.value:N0} {electric.payload.evRangeWithAc.unit}");
                 Console.WriteLine($"");
             }
         }

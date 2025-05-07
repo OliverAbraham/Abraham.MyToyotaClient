@@ -10,12 +10,17 @@ Connects to Toyota Connected Services API and retrieves data about your Toyota c
 You can use this Nuget package to read out the current battery level, range or geo position.
 Please take a look at my demo to find out the individual values.
 
-**ATTENTION** My first package had a wrong name! Please replace the old package "MyToyotaClient" with the new package "Abraham.MyToyotaClient".
 
 
 ## CREDITS
 Many thanks to the Toyota Connected Services Europe Python module by Simon Hansen!
 He has published his client at https://github.com/DurgNomis-drol/mytoyota.
+Many thanks to to Simon Hörrle and Arnav Jain who published the successor https://github.com/pytoyoda.
+
+
+## CHANGES
+The current version includes the function to request the realtime status of the battery.
+Based on the latest version of https://github.com/pytoyoda.
 
 
 ## LICENSE
